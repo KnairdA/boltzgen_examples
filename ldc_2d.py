@@ -1,6 +1,5 @@
 import numpy
 import time
-from string import Template
 
 import matplotlib
 matplotlib.use('AGG')
@@ -18,47 +17,53 @@ def generate_moment_plots(lattice, moments):
     for i, m in enumerate(moments):
         print("Generating plot %d of %d." % (i+1, len(moments)))
 
-        velocity = numpy.ndarray(shape=tuple(reversed(lattice.geometry.inner_size())))
-        for x, y in lattice.geometry.inner_cells():
-            velocity[y-1,x-1] = numpy.sqrt(m[1,lattice.memory.gid(x,y)]**2 + m[2,lattice.memory.gid(x,y)]**2)
+        gid = lattice.memory.gid
+        velocity = numpy.reshape(
+            [ numpy.sqrt(m[gid(x,y)*3+1]**2 + m[gid(x,y)*3+2]**2) for x, y in lattice.geometry.inner_cells() ],
+            lattice.geometry.inner_size())
 
         plt.figure(figsize=(10, 10))
         plt.imshow(velocity, origin='lower', cmap=plt.get_cmap('seismic'))
         plt.savefig("result/ldc_2d_%02d.png" % i, bbox_inches='tight', pad_inches=0)
 
 nUpdates = 100000
-nStat    = 5000
+nStat    = 10000
 
 geometry = Geometry(512, 512)
 
 print("Generating kernel using boltzgen...\n")
-
-lbm = LBM(D2Q9)
-generator = Generator(
-    descriptor = D2Q9,
-    moments    = lbm.moments(),
-    collision  = lbm.bgk(f_eq = lbm.equilibrium(), tau = 0.6))
 
 functions = ['collide_and_stream', 'equilibrilize', 'collect_moments', 'momenta_boundary']
 extras    = ['cell_list_dispatch']
 
 precision = 'single'
 
-kernel_src = generator.kernel('cl', precision, 'SOA', 'ZYX', geometry, functions, extras) + Template("""
-__kernel void equilibrilize(__global $float_type* f_next,
-                            __global $float_type* f_prev)
+lbm = LBM(D2Q9)
+generator = Generator(
+    descriptor = D2Q9,
+    moments    = lbm.moments(),
+    collision  = lbm.bgk(f_eq = lbm.equilibrium(), tau = 0.6),
+    target     = 'cl',
+    precision  = precision,
+    index      = 'ZYX',
+    layout     = 'SOA')
+
+kernel_src  = generator.kernel(geometry, functions, extras)
+kernel_src += generator.custom(geometry, """
+__kernel void equilibrilize(__global ${float_type}* f_next,
+                            __global ${float_type}* f_prev)
 {
-    const unsigned int gid = get_global_id(1)*$size_x + get_global_id(0);
+    const unsigned int gid = ${index.gid('get_global_id(0)', 'get_global_id(1)')};
     equilibrilize_gid(f_next, f_prev, gid);
 }
 
-__kernel void collect_moments(__global $float_type* f,
-                              __global $float_type* moments)
+__kernel void collect_moments(__global ${float_type}* f,
+                              __global ${float_type}* moments)
 {
-    const unsigned int gid = get_global_id(1)*$size_x + get_global_id(0);
+    const unsigned int gid = ${index.gid('get_global_id(0)', 'get_global_id(1)')};
     collect_moments_gid(f, moments, gid);
 }
-""").substitute(float_type = 'float', size_x = geometry.size_x)
+""")
 
 print("Initializing simulation...\n")
 

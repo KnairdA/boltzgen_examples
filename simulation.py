@@ -41,6 +41,7 @@ class CellList:
 class Lattice:
     def __init__(self, geometry, kernel_src, descriptor, platform = 0, precision = 'single'):
         self.geometry = geometry
+        self.descriptor = descriptor
 
         self.float_type = {
             'single': (numpy.float32, 'float'),
@@ -90,7 +91,7 @@ class Lattice:
         self.queue.finish()
 
     def get_moments(self):
-        moments = numpy.ndarray(shape=(3, self.memory.volume), dtype=self.float_type[0])
+        moments = numpy.ndarray(shape=(self.memory.volume*(self.descriptor.d+1),1), dtype=self.float_type[0])
 
         if self.tick:
             self.program.collect_moments(
