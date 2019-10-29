@@ -27,16 +27,21 @@ pkgs.stdenvNoCC.mkDerivation rec {
 
     local-python = pkgs.python3.withPackages (python-packages: with python-packages; [
       boltzgen
+      numpy
+      pyopencl setuptools
+      matplotlib
     ]);
 
-  in [
+  in with pkgs; [
     local-python
-    pkgs.gcc9
-    pkgs.cmake
+    opencl-info
+    gcc9
+    cmake
   ];
 
   shellHook = ''
     export NIX_SHELL_NAME="${name}"
+    export PYOPENCL_COMPILER_OUTPUT=1
     export PYTHONPATH="$PWD:$PYTHONPATH"
   '';
 }
