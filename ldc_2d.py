@@ -42,7 +42,9 @@ generator = Generator(
 functions = ['collide_and_stream', 'equilibrilize', 'collect_moments', 'momenta_boundary']
 extras    = ['cell_list_dispatch']
 
-kernel_src = generator.kernel('cl', 'single', 'SOA', geometry, functions, extras) + Template("""
+precision = 'single'
+
+kernel_src = generator.kernel('cl', precision, 'SOA', 'ZYX', geometry, functions, extras) + Template("""
 __kernel void equilibrilize(__global $float_type* f_next,
                             __global $float_type* f_prev)
 {
@@ -60,7 +62,7 @@ __kernel void collect_moments(__global $float_type* f,
 
 print("Initializing simulation...\n")
 
-lattice = Lattice(geometry, kernel_src)
+lattice = Lattice(geometry, kernel_src, D2Q9, precision = precision)
 gid = lattice.memory.gid
 
 bulk_cells = CellList(lattice.context, lattice.queue, lattice.float_type,

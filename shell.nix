@@ -9,18 +9,21 @@ pkgs.stdenvNoCC.mkDerivation rec {
       pname = "boltzgen";
       version = "0.1";
 
-      src = pkgs.fetchFromGitHub {
-        owner  = "KnairdA";
-        repo   = "boltzgen";
-        rev    = "v0.1";
-        sha256 = "072kx4jrzd0g9rn63hjb0yic7qhbga47lp2vbz7rq3gvkqv1hz4d";
-      };
+      #src = pkgs.fetchFromGitHub {
+        #owner  = "KnairdA";
+        #repo   = "boltzgen";
+        #rev    = "v0.1";
+        #sha256 = "072kx4jrzd0g9rn63hjb0yic7qhbga47lp2vbz7rq3gvkqv1hz4d";
+      #};
+      src = ~/projects/dev/boltzgen;
 
       propagatedBuildInputs = with pkgs.python37Packages; [
         sympy
         numpy
         Mako
       ];
+
+      doCheck = false;
     };
 
     local-python = pkgs.python3.withPackages (python-packages: with python-packages; [

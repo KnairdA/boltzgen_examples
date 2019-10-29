@@ -4,17 +4,16 @@ mf = cl.mem_flags
 import numpy
 
 class Memory:
-    def __init__(self, grid, context, float_type):
+    def __init__(self, descriptor, geometry, context, float_type):
         self.context    = context
         self.float_type = float_type
 
-        self.size_x = grid.size_x
-        self.size_y = grid.size_y
-        self.size_z = grid.size_z
-
+        self.size_x = geometry.size_x
+        self.size_y = geometry.size_y
+        self.size_z = geometry.size_z
         self.volume = self.size_x * self.size_y * self.size_z
 
-        self.pop_size     = 9 * self.volume * self.float_type(0).nbytes
+        self.pop_size     = descriptor.q * self.volume * self.float_type(0).nbytes
         self.moments_size = 3 * self.volume * self.float_type(0).nbytes
 
         self.cl_pop_a = cl.Buffer(self.context, mf.READ_WRITE, size=self.pop_size)
@@ -40,7 +39,7 @@ class CellList:
         return (len(self.np_cells), 1, 1)
 
 class Lattice:
-    def __init__(self, geometry, kernel_src, platform = 0, precision = 'single'):
+    def __init__(self, geometry, kernel_src, descriptor, platform = 0, precision = 'single'):
         self.geometry = geometry
 
         self.float_type = {
@@ -56,7 +55,7 @@ class Lattice:
 
         self.queue = cl.CommandQueue(self.context)
 
-        self.memory = Memory(self.geometry, self.context, self.float_type[0])
+        self.memory = Memory(descriptor, self.geometry, self.context, self.float_type[0])
         self.tick = False
 
         self.compiler_args = {
