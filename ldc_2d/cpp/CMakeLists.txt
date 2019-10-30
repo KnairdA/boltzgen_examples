@@ -1,10 +1,22 @@
 cmake_minimum_required(VERSION 3.10)
-project(ldc_2d LANGUAGES CXX)
+project(ldc LANGUAGES CXX)
 
-add_custom_target(
-	boltzgen_kernel
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+add_custom_command(
+	OUTPUT
+		kernel.h
+		ldc.cpp
 	COMMAND
-		${CMAKE_CURRENT_SOURCE_DIR}/generate.py
+		${CMAKE_CURRENT_SOURCE_DIR}/generate.py --output ${CMAKE_CURRENT_BINARY_DIR}
+	WORKING_DIRECTORY
+		${CMAKE_CURRENT_SOURCE_DIR}
+	DEPENDS
+		generate.py ldc.cpp.mako
 )
 
 include_directories(
@@ -12,17 +24,12 @@ include_directories(
 )
 
 add_executable(
-	ldc_2d
-		ldc_2d.cc
-)
-
-add_dependencies(
-	ldc_2d
-		boltzgen_kernel
+	ldc
+		${CMAKE_CURRENT_BINARY_DIR}/ldc.cpp
 )
 
 target_compile_features(
-	ldc_2d
+	ldc
 	PUBLIC
 		cxx_std_17
 )
@@ -30,7 +37,7 @@ target_compile_features(
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
 	target_link_libraries(
-		ldc_2d
+		ldc
 		PUBLIC
 			OpenMP::OpenMP_CXX
 	)

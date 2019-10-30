@@ -1,14 +1,20 @@
 #!/usr/bin/env python
 
+import argparse
+
 from boltzgen import LBM, Generator, Geometry
 from boltzgen.lbm.model import D2Q9
 
-geometry = Geometry(256, 256)
+argparser = argparse.ArgumentParser(
+    description = 'Generate a C++ implementation of a lid driven cavity simulation using LBM')
+argparser.add_argument(
+    '--output', required = False, help = 'Target directory for the generated sources')
 
-functions = ['collide_and_stream', 'equilibrilize', 'collect_moments', 'momenta_boundary', 'example']
-extras    = ['omp_parallel_for', 'moments_vtk']
+args = argparser.parse_args()
 
-precision = 'double'
+geometry = Geometry(128, 128)
+
+functions = ['collide_and_stream', 'equilibrilize', 'collect_moments', 'momenta_boundary']
 
 lbm = LBM(D2Q9)
 generator = Generator(
@@ -16,9 +22,19 @@ generator = Generator(
     moments    = lbm.moments(),
     collision  = lbm.bgk(f_eq = lbm.equilibrium(), tau = 0.52),
     target     = 'cpp',
-    precision  = precision,
+    precision  = 'double',
     index      = 'XYZ',
     layout     = 'AOS')
 
-with open("kernel.h", "w") as kernel:
-    kernel.write(generator.kernel(geometry, functions, extras))
+if args.output is None:
+    args.output = '.'
+
+with open('%s/kernel.h' % args.output, 'w') as kernel:
+    kernel.write(generator.kernel(geometry, functions))
+
+ldc_src = ''
+with open('ldc.cpp.mako', 'r') as template:
+    ldc_src = template.read()
+
+with open('%s/ldc.cpp' % args.output, 'w') as app:
+    app.write(generator.custom(geometry, ldc_src))
