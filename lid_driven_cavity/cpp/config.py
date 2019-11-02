@@ -1,8 +1,8 @@
-from boltzgen.lbm.model import *
+from boltzgen.lbm.lattice import *
 from boltzgen import Geometry
 
 descriptor = D2Q9
-geometry   = Geometry(512, 512)
+geometry   = Geometry(256, 256)
 tau        = 0.52
 precision  = 'single'
 

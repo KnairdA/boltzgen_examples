@@ -2,8 +2,8 @@
 
 import argparse
 
-from boltzgen import LBM, Generator, Geometry
-from boltzgen.lbm.model import D2Q9
+from boltzgen import Generator, Geometry
+from boltzgen.lbm.model import BGK
 
 import config
 
@@ -14,15 +14,12 @@ argparser.add_argument(
 
 args = argparser.parse_args()
 
-lbm = LBM(config.descriptor)
 generator = Generator(
-    descriptor = config.descriptor,
-    moments    = lbm.moments(),
-    collision  = lbm.bgk(f_eq = lbm.equilibrium(), tau = config.tau),
-    target     = 'cpp',
-    precision  = config.precision,
-    index      = 'XYZ',
-    layout     = 'AOS')
+    model     = BGK(config.descriptor, tau = config.tau),
+    target    = 'cpp',
+    precision = config.precision,
+    index     = 'XYZ',
+    layout    = 'AOS')
 
 if args.output is None:
     args.output = '.'

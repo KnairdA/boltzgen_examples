@@ -5,8 +5,9 @@ import matplotlib
 matplotlib.use('AGG')
 import matplotlib.pyplot as plt
 
-from boltzgen import LBM, Generator, Geometry
-from boltzgen.lbm.model import D2Q9
+from boltzgen import Generator, Geometry
+from boltzgen.lbm.lattice import D2Q9
+from boltzgen.lbm.model   import BGK
 
 from simulation import Lattice, CellList
 
@@ -29,7 +30,7 @@ def generate_moment_plots(lattice, moments):
 nUpdates = 100000
 nStat    = 10000
 
-geometry = Geometry(512, 512)
+geometry = Geometry(256, 256)
 
 print("Generating kernel using boltzgen...\n")
 
@@ -38,15 +39,12 @@ extras    = ['cell_list_dispatch']
 
 precision = 'single'
 
-lbm = LBM(D2Q9)
 generator = Generator(
-    descriptor = D2Q9,
-    moments    = lbm.moments(),
-    collision  = lbm.bgk(f_eq = lbm.equilibrium(), tau = 0.6),
-    target     = 'cl',
-    precision  = precision,
-    index      = 'ZYX',
-    layout     = 'SOA')
+    model     = BGK(D2Q9, tau = 0.6),
+    target    = 'cl',
+    precision = precision,
+    index     = 'ZYX',
+    layout    = 'SOA')
 
 kernel_src  = generator.kernel(geometry, functions, extras)
 kernel_src += generator.custom(geometry, """
