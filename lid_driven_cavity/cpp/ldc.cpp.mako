@@ -132,8 +132,10 @@ void simulate(std::size_t nStep)
     std::cout << "#steps  : " << nStep         << std::endl;
     std::cout << std::endl;
 
+#pragma omp parallel for
     for (std::size_t iCell = 0; iCell < ${geometry.volume}; ++iCell) {
         equilibrilize(f_prev, f_next, iCell);
+        equilibrilize(f_next, f_prev, iCell);
     }
 
     const auto start = std::chrono::high_resolution_clock::now();

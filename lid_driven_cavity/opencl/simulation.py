@@ -66,7 +66,7 @@ class Lattice:
 
         self.build_kernel(kernel_src)
 
-        self.program.equilibrilize(
+        self.program.equilibrilize_all(
             self.queue, self.geometry.size(), self.layout, self.memory.cl_pop_a, self.memory.cl_pop_b).wait()
 
         self.tasks = []
@@ -94,10 +94,10 @@ class Lattice:
         moments = numpy.ndarray(shape=(self.memory.volume*(self.descriptor.d+1),1), dtype=self.float_type[0])
 
         if self.tick:
-            self.program.collect_moments(
+            self.program.collect_moments_all(
                 self.queue, self.geometry.size(), self.layout, self.memory.cl_pop_b, self.memory.cl_moments)
         else:
-            self.program.collect_moments(
+            self.program.collect_moments_all(
                 self.queue, self.geometry.size(), self.layout, self.memory.cl_pop_a, self.memory.cl_moments)
 
         cl.enqueue_copy(self.queue, moments, self.memory.cl_moments).wait();

@@ -12,8 +12,8 @@ pkgs.stdenvNoCC.mkDerivation rec {
       src = pkgs.fetchFromGitHub {
         owner  = "KnairdA";
         repo   = "boltzgen";
-        rev    = "v0.1.2";
-        sha256 = "1amsp45iq36vn63x7xqzj498hr5k9c4yj40wjccylwp9m2w14s8f";
+        rev    = "78f5edec8151db38ebf933e915fcca5f65b1cad5";
+        sha256 = "1cyp5b5v8r24ih2dxhjhlp7frnqlwzslah2pzfi745f3ii370r42";
       };
 
       propagatedBuildInputs = with pkgs.python37Packages; [

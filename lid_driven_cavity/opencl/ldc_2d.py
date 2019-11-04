@@ -48,18 +48,19 @@ generator = Generator(
 
 kernel_src  = generator.kernel(geometry, functions, extras)
 kernel_src += generator.custom(geometry, """
-__kernel void equilibrilize(__global ${float_type}* f_next,
-                            __global ${float_type}* f_prev)
+__kernel void equilibrilize_all(__global ${float_type}* f_next,
+                                __global ${float_type}* f_prev)
 {
     const unsigned int gid = ${index.gid('get_global_id(0)', 'get_global_id(1)')};
-    equilibrilize_gid(f_next, f_prev, gid);
+    equilibrilize(f_next, f_prev, gid);
+    equilibrilize(f_prev, f_next, gid);
 }
 
-__kernel void collect_moments(__global ${float_type}* f,
-                              __global ${float_type}* moments)
+__kernel void collect_moments_all(__global ${float_type}* f,
+                                  __global ${float_type}* moments)
 {
     const unsigned int gid = ${index.gid('get_global_id(0)', 'get_global_id(1)')};
-    collect_moments_gid(f, moments, gid);
+    collect_moments(f, gid, moments);
 }
 """)
 
