@@ -18,6 +18,7 @@ generator = Generator(
     model     = BGK(config.descriptor, tau = config.tau),
     target    = 'cpp',
     precision = config.precision,
+    streaming = config.streaming,
     index     = 'XYZ',
     layout    = 'AOS')
 
@@ -30,7 +31,7 @@ with open('%s/kernel.h' % args.output, 'w') as kernel:
     kernel.write(generator.kernel(config.geometry, functions))
 
 ldc_src = ''
-with open('ldc.cpp.mako', 'r') as template:
+with open('ldc.cpp.%s.mako' % config.streaming, 'r') as template:
     ldc_src = template.read()
 
 with open('%s/ldc.cpp' % args.output, 'w') as app:

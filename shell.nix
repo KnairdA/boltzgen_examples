@@ -9,11 +9,9 @@ pkgs.stdenvNoCC.mkDerivation rec {
       pname = "boltzgen";
       version = "0.1";
 
-      src = pkgs.fetchFromGitHub {
-        owner  = "KnairdA";
-        repo   = "boltzgen";
-        rev    = "78f5edec8151db38ebf933e915fcca5f65b1cad5";
-        sha256 = "1cyp5b5v8r24ih2dxhjhlp7frnqlwzslah2pzfi745f3ii370r42";
+      src = builtins.fetchGit {
+        url = "https://code.kummerlaender.eu/boltzgen/";
+        rev = "02cb01c94fe26d425371ab74feeb50e8a9bf6bf6";
       };
 
       propagatedBuildInputs = with pkgs.python37Packages; [

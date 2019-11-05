@@ -16,7 +16,10 @@ add_custom_command(
 	WORKING_DIRECTORY
 		${CMAKE_CURRENT_SOURCE_DIR}
 	DEPENDS
-		generate.py config.py ldc.cpp.mako
+		generate.py
+		config.py
+		ldc.cpp.AA.mako
+		ldc.cpp.AB.mako
 )
 
 include_directories(
