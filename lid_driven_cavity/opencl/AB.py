@@ -24,20 +24,6 @@ class Memory:
     def gid(self, x, y, z = 0):
         return z * (self.size_x*self.size_y) + y * self.size_x + x;
 
-class CellList:
-    def __init__(self, context, queue, float_type, cells):
-        self.cl_cells = cl.Buffer(context, mf.READ_ONLY, size=len(cells) * numpy.uint32(0).nbytes)
-        self.np_cells = numpy.ndarray(shape=(len(cells), 1), dtype=numpy.uint32)
-        self.np_cells[:,0] = cells[:]
-
-        cl.enqueue_copy(queue, self.cl_cells, self.np_cells).wait();
-
-    def get(self):
-        return self.cl_cells
-
-    def size(self):
-        return (len(self.np_cells), 1, 1)
-
 class Lattice:
     def __init__(self, geometry, kernel_src, descriptor, platform = 0, precision = 'single'):
         self.geometry = geometry
@@ -103,3 +89,20 @@ class Lattice:
         cl.enqueue_copy(self.queue, moments, self.memory.cl_moments).wait();
 
         return moments
+
+HelperTemplate = """
+__kernel void equilibrilize_all(__global ${float_type}* f_next,
+                                __global ${float_type}* f_prev)
+{
+    const unsigned int gid = ${index.gid('get_global_id(0)', 'get_global_id(1)')};
+    equilibrilize(f_next, f_prev, gid);
+    equilibrilize(f_prev, f_next, gid);
+}
+
+__kernel void collect_moments_all(__global ${float_type}* f,
+                                  __global ${float_type}* moments)
+{
+    const unsigned int gid = ${index.gid('get_global_id(0)', 'get_global_id(1)')};
+    collect_moments(f, gid, moments);
+}
+"""
