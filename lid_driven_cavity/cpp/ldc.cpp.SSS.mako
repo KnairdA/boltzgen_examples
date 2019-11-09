@@ -98,7 +98,7 @@ padding = (max(geometry.size_x,geometry.size_y,geometry.size_z)+1)**(descriptor.
     ${float_type}* f[${descriptor.q}];
 
 % for i, c_i in enumerate(descriptor.c):
-    f[${i}]  = f_aa.get() + ${layout.pop_offset(i) + padding};
+    f[${i}]  = f_aa.get() + ${padding + layout.pop_offset(i, 2*padding)};
 % endfor
 
     std::vector<std::size_t> ghost;

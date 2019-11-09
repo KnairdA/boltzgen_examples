@@ -8,7 +8,7 @@ precision  = 'double'
 streaming  = 'SSS'
 
 ## 3D LDC
-#descriptor = D3Q27
+#descriptor = D3Q19
 #geometry   = Geometry(64, 64, 64)
 #tau        = 0.6
 #precision  = 'double'
