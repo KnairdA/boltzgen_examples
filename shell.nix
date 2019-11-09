@@ -5,13 +5,29 @@ pkgs.stdenvNoCC.mkDerivation rec {
   env = pkgs.buildEnv { name = name; paths = buildInputs; };
 
   buildInputs = let
+    custom-python = let
+      packageOverrides = self: super: {
+        pyopencl = super.pyopencl.overridePythonAttrs(old: rec {
+          buildInputs = with pkgs; [
+            opencl-headers ocl-icd python37Packages.pybind11
+            libGLU_combined
+          ];
+        # Enable OpenGL integration and fix build
+          preBuild = ''
+            python configure.py --cl-enable-gl
+            export HOME=/tmp/pyopencl
+          '';
+        });
+      };
+    in pkgs.python3.override { inherit packageOverrides; };
+
     boltzgen = pkgs.python3.pkgs.buildPythonPackage rec {
       pname = "boltzgen";
       version = "0.1";
 
       src = builtins.fetchGit {
         url = "https://code.kummerlaender.eu/boltzgen/";
-        rev = "814e6253475c7955eb6a46d814e5a86974e58613";
+        rev = "286e243a171c8bcdfc91b5b6dcdd937ac95b0b7b";
       };
 
       propagatedBuildInputs = with pkgs.python37Packages; [
@@ -23,10 +39,11 @@ pkgs.stdenvNoCC.mkDerivation rec {
       doCheck = false;
     };
 
-    local-python = pkgs.python3.withPackages (python-packages: with python-packages; [
+    local-python = custom-python.withPackages (python-packages: with python-packages; [
       boltzgen
       numpy
       pyopencl setuptools
+      pyopengl pyrr
       matplotlib
     ]);
 
