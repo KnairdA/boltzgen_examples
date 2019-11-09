@@ -60,14 +60,14 @@ if streaming == 'AB':
     lattice.schedule('velocity_momenta_boundary_cells', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
 
 elif streaming == 'AA':
-    lattice.schedule_tick('collide_and_stream_tick_cells', bulk_cells)
-    lattice.schedule_tick('velocity_momenta_boundary_tick_cells', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
-    lattice.schedule_tick('velocity_momenta_boundary_tick_cells', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
+    lattice.schedule_tick('collide_and_stream_cells_tick', bulk_cells)
+    lattice.schedule_tick('velocity_momenta_boundary_cells_tick', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
+    lattice.schedule_tick('velocity_momenta_boundary_cells_tick', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
 
-    lattice.schedule_tock('equilibrilize_tick_cells', ghost_cells)
-    lattice.schedule_tock('collide_and_stream_tock_cells', bulk_cells)
-    lattice.schedule_tock('velocity_momenta_boundary_tock_cells', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
-    lattice.schedule_tock('velocity_momenta_boundary_tock_cells', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
+    lattice.schedule_tock('equilibrilize_cells_tick', ghost_cells)
+    lattice.schedule_tock('collide_and_stream_cells_tock', bulk_cells)
+    lattice.schedule_tock('velocity_momenta_boundary_cells_tock', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
+    lattice.schedule_tock('velocity_momenta_boundary_cells_tock', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
 
 
 print("Starting simulation using %d cells...\n" % lattice.geometry.volume)
