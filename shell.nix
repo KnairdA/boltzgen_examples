@@ -27,7 +27,7 @@ pkgs.stdenvNoCC.mkDerivation rec {
 
       src = builtins.fetchGit {
         url = "https://code.kummerlaender.eu/boltzgen/";
-        rev = "286e243a171c8bcdfc91b5b6dcdd937ac95b0b7b";
+        rev = "27ce855378a80dff680c2989800af1f4e69975fe";
       };
 
       propagatedBuildInputs = with pkgs.python37Packages; [

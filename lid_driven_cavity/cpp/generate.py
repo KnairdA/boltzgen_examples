@@ -20,12 +20,15 @@ generator = Generator(
     precision = config.precision,
     streaming = config.streaming,
     index     = 'XYZ',
-    layout    = 'AOS')
+    layout    = 'SOA')
 
 if args.output is None:
     args.output = '.'
 
 functions = ['collide_and_stream', 'equilibrilize', 'collect_moments', 'momenta_boundary']
+
+if config.streaming == 'SSS':
+    functions += ['update_sss_control_structure']
 
 with open('%s/kernel.h' % args.output, 'w') as kernel:
     kernel.write(generator.kernel(config.geometry, functions))

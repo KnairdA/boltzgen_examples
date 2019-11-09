@@ -18,8 +18,9 @@ add_custom_command(
 	DEPENDS
 		generate.py
 		config.py
-		ldc.cpp.AA.mako
 		ldc.cpp.AB.mako
+		ldc.cpp.AA.mako
+		ldc.cpp.SSS.mako
 )
 
 include_directories(

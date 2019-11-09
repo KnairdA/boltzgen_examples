@@ -5,11 +5,11 @@ descriptor = D2Q9
 geometry   = Geometry(256, 256)
 tau        = 0.52
 precision  = 'double'
-streaming  = 'AA'
+streaming  = 'SSS'
 
 ## 3D LDC
-#descriptor = D3Q19
+#descriptor = D3Q27
 #geometry   = Geometry(64, 64, 64)
-#tau        = 0.52
-#precision  = 'single'
-#streaming  = 'AA'
+#tau        = 0.6
+#precision  = 'double'
+#streaming  = 'SSS'
