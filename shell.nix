@@ -27,7 +27,7 @@ pkgs.stdenvNoCC.mkDerivation rec {
 
       src = builtins.fetchGit {
         url = "https://code.kummerlaender.eu/boltzgen/";
-        rev = "d136bb30bc8a9393372ec905aea500a0b61000e3";
+        rev = "4a2885ad3ae0396486d288df94339d0c45e6db8b";
       };
 
       propagatedBuildInputs = with pkgs.python37Packages; [
@@ -52,11 +52,14 @@ pkgs.stdenvNoCC.mkDerivation rec {
     opencl-info
     gcc9
     cmake
+    cudatoolkit
+    linuxPackages.nvidia_x11 
   ];
 
   shellHook = ''
     export NIX_SHELL_NAME="${name}"
     export PYOPENCL_COMPILER_OUTPUT=1
+    export CUDA_PATH="${pkgs.cudatoolkit}"
     export PYTHONPATH="$PWD:$PYTHONPATH"
   '';
 }
