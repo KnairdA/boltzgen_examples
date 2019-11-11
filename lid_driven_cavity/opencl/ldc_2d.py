@@ -10,7 +10,7 @@ from common import CellList, generate_moment_plots
 nUpdates = 100000
 nStat    = 10000
 
-geometry = Geometry(512, 512)
+geometry = Geometry(256, 256)
 
 print("Generating kernel using boltzgen...\n")
 

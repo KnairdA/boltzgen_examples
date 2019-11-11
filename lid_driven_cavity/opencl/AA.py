@@ -83,7 +83,7 @@ class Lattice:
         moments = numpy.ndarray(shape=(self.memory.volume*(self.descriptor.d+1),1), dtype=self.float_type[0])
 
         self.program.collect_moments_all(
-            self.queue, self.geometry.size(), self.layout, self.memory.cl_pop, self.memory.cl_moments)
+            self.queue, self.geometry.inner_size(), self.layout, self.memory.cl_pop, self.memory.cl_moments)
 
         cl.enqueue_copy(self.queue, moments, self.memory.cl_moments).wait();
 
@@ -99,7 +99,7 @@ __kernel void equilibrilize_all(__global ${float_type}* f_next)
 __kernel void collect_moments_all(__global ${float_type}* f,
                                   __global ${float_type}* moments)
 {
-    const unsigned int gid = ${index.gid('get_global_id(0)', 'get_global_id(1)')};
+    const unsigned int gid = ${index.gid('get_global_id(0)+1', 'get_global_id(1)+1')};
     collect_moments_tock(f, gid, moments);
 }
 """

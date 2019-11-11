@@ -44,22 +44,16 @@ pkgs.stdenvNoCC.mkDerivation rec {
       numpy
       pyopencl setuptools
       pyopengl pyrr
-      matplotlib
     ]);
 
   in with pkgs; [
     local-python
     opencl-info
-    gcc9
-    cmake
-    cudatoolkit
-    linuxPackages.nvidia_x11 
   ];
 
   shellHook = ''
     export NIX_SHELL_NAME="${name}"
     export PYOPENCL_COMPILER_OUTPUT=1
-    export CUDA_PATH="${pkgs.cudatoolkit}"
     export PYTHONPATH="$PWD:$PYTHONPATH"
   '';
 }
