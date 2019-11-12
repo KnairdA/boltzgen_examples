@@ -4,10 +4,11 @@
 #include <chrono>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 #include "kernel.h"
 
-void write_moments_to_vtk(const std::string& path, ${float_type}* u) {
+void write_moments_to_vtk(const std::string& path, ${float_type}* rho, ${float_type}* u) {
     std::ofstream fout;
     fout.open(path.c_str());
 
@@ -47,16 +48,36 @@ void write_moments_to_vtk(const std::string& path, ${float_type}* u) {
 % if descriptor.d == 2:
     for ( std::size_t y = 1; y < ${geometry.size_y-1}; ++y ) {
         for ( std::size_t x = 1; x < ${geometry.size_x-1}; ++x ) {
-            const std::size_t gid = x*${geometry.size_y}+y;
-            fout << u[gid*${descriptor.d}+0] << " " << u[gid*${descriptor.d}+1] << " 0\n";
+            const std::size_t iCell = ${index.gid('x','y')};
+            fout << u[iCell*${descriptor.d}+0] << " " << u[iCell*${descriptor.d}+1] << " 0\n";
         }
     }
 % else:
     for ( std::size_t z = 1; z < ${geometry.size_z-1}; ++z ) {
         for ( std::size_t y = 1; y < ${geometry.size_y-1}; ++y ) {
             for ( std::size_t x = 1; x < ${geometry.size_x-1}; ++x ) {
-                const std::size_t gid = x*${geometry.size_y*geometry.size_z}+y*${geometry.size_z}+z;
-                fout << u[gid*${descriptor.d}+0] << " " << u[gid*${descriptor.d}+1] << " " << u[gid*${descriptor.d}+2] << "\n";
+                const std::size_t iCell = ${index.gid('x','y','z')};
+                fout << u[iCell*${descriptor.d}+0] << " " << u[iCell*${descriptor.d}+1] << " " << u[iCell*${descriptor.d}+2] << "\n";
+            }
+        }
+    }
+% endif
+
+    fout << "SCALARS density float 1\n";
+    fout << "LOOKUP_TABLE default\n";
+% if descriptor.d == 2:
+    for ( std::size_t y = 1; y < ${geometry.size_y-1}; ++y ) {
+        for ( std::size_t x = 1; x < ${geometry.size_x-1}; ++x ) {
+            const std::size_t iCell = ${index.gid('x','y')};
+            fout << rho[iCell] << "\n";
+        }
+    }
+% else:
+    for ( std::size_t z = 1; z < ${geometry.size_z-1}; ++z ) {
+        for ( std::size_t y = 1; y < ${geometry.size_y-1}; ++y ) {
+            for ( std::size_t x = 1; x < ${geometry.size_x-1}; ++x ) {
+                const std::size_t iCell = ${index.gid('x','y','z')};
+                fout << rho[iCell] << "\n";
             }
         }
     }
@@ -80,6 +101,8 @@ void simulate(std::size_t nStep)
     cudaMalloc(&device_moments_rho, ${geometry.volume} * sizeof(${float_type}));
     ${float_type}* device_moments_u;
     cudaMalloc(&device_moments_u, ${geometry.volume*descriptor.d} * sizeof(${float_type}));
+
+    std::vector<${float_type}> moments_rho(${geometry.volume});
     std::vector<${float_type}> moments_u(${geometry.volume*descriptor.d});
 
     init_sss_control_structure<<<1,1>>>(f_aa, f);
@@ -93,7 +116,7 @@ void simulate(std::size_t nStep)
     for (int iX = 0; iX < ${geometry.size_x}; ++iX) {
         for (int iY = 0; iY < ${geometry.size_y}; ++iY) {
 % if descriptor.d == 2:
-            const std::size_t iCell = iX*${geometry.size_y} + iY;
+            const std::size_t iCell = ${index.gid('iX','iY')};
             if (iX == 0 || iY == 0 || iX == ${geometry.size_x-1} || iY == ${geometry.size_y-1}) {
                 ghost.emplace_back(iCell);
             } else if (iY == ${geometry.size_y-2}) {
@@ -105,7 +128,7 @@ void simulate(std::size_t nStep)
             }
 % elif descriptor.d == 3:
             for (int iZ = 0; iZ < ${geometry.size_z}; ++iZ) {
-                const std::size_t iCell = iX*${geometry.size_y*geometry.size_z} + iY*${geometry.size_z} + iZ;
+                const std::size_t iCell = ${index.gid('iX','iY','iZ')};
                 if (   iX == 0 || iY == 0 || iZ == 0
                     || iX == ${geometry.size_x-1}
                     || iY == ${geometry.size_y-1}
@@ -124,6 +147,11 @@ void simulate(std::size_t nStep)
 % endif
         }
     }
+
+    std::sort(ghost.begin(),  ghost.end());
+    std::sort(bulk.begin(),   bulk.end());
+    std::sort(lid_bc.begin(), lid_bc.end());
+    std::sort(box_bc.begin(), box_bc.end());
 
     std::cout << "#ghost  : " << ghost.size()  << std::endl;
     std::cout << "#bulk   : " << bulk.size()   << std::endl;
@@ -188,19 +216,20 @@ void simulate(std::size_t nStep)
         velocity_momenta_boundary<<<block_count,block_size>>>(f, device_lid_bc_cells, lid_bc.size(), 0.05, 0.0, 0.0);
 % endif
 
-        cudaDeviceSynchronize();
         update_sss_control_structure<<<1,1>>>(f);
-        cudaDeviceSynchronize();
 
         if (iStep % 1000 == 0) {
-            auto duration = std::chrono::duration_cast<std::chrono::duration<float>>(
+            cudaDeviceSynchronize();
+
+            auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(
                 std::chrono::high_resolution_clock::now() - start);
-                std::cout << "iStep = " << iStep << "; ~" << 1000*${geometry.volume}/(1e6*duration.count()) << " MLUPS" << std::endl;
+                std::cout << "iStep = " << iStep << "; ~" << 1000*${geometry.volume}l/(1e6*duration.count()) << " MLUPS" << std::endl;
 
             block_count = (bulk.size() + block_size - 1) / block_size;
             collect_moments<<<block_count,block_size>>>(f, device_bulk_cells, bulk.size(), device_moments_rho, device_moments_u);
+            cudaMemcpy(moments_rho.data(), device_moments_rho, ${geometry.volume}*sizeof(${float_type}), cudaMemcpyDeviceToHost);
             cudaMemcpy(moments_u.data(), device_moments_u, ${geometry.volume*descriptor.d}*sizeof(${float_type}), cudaMemcpyDeviceToHost);
-            write_moments_to_vtk("result/ldc_" + std::to_string(iStep) + ".vtk", moments_u.data());
+            write_moments_to_vtk("result/ldc_" + std::to_string(iStep) + ".vtk", moments_rho.data(), moments_u.data());
 
             start = std::chrono::high_resolution_clock::now();
         }

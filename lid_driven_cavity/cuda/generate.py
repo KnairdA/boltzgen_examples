@@ -19,7 +19,7 @@ generator = Generator(
     target    = 'cuda',
     precision = config.precision,
     streaming = config.streaming,
-    index     = 'XYZ',
+    index     = config.index,
     layout    = 'SOA')
 
 if args.output is None:

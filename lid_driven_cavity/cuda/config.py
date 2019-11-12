@@ -6,6 +6,7 @@ geometry   = Geometry(512, 512)
 tau        = 0.52
 precision  = 'single'
 streaming  = 'SSS'
+index      = 'ZYX'
 
 ## 3D LDC
 #descriptor = D3Q19
@@ -13,3 +14,4 @@ streaming  = 'SSS'
 #tau        = 0.6
 #precision  = 'single'
 #streaming  = 'SSS'
+#index      = 'ZYX'
