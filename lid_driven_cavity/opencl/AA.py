@@ -24,7 +24,7 @@ class Memory:
         return z * (self.size_x*self.size_y) + y * self.size_x + x;
 
 class Lattice:
-    def __init__(self, geometry, kernel_src, descriptor, platform = 0, precision = 'single'):
+    def __init__(self, geometry, kernel_src, descriptor, context, queue, precision = 'single'):
         self.geometry = geometry
         self.descriptor = descriptor
 
@@ -33,13 +33,10 @@ class Lattice:
             'double': (numpy.float64, 'double'),
         }.get(precision, None)
 
-        self.platform = cl.get_platforms()[platform]
         self.layout = None
 
-        self.context = cl.Context(
-            properties=[(cl.context_properties.PLATFORM, self.platform)])
-
-        self.queue = cl.CommandQueue(self.context)
+        self.context = context
+        self.queue   = queue
 
         self.memory = Memory(descriptor, self.geometry, self.context, self.float_type[0])
         self.tick = False
@@ -51,7 +48,7 @@ class Lattice:
 
         self.build_kernel(kernel_src)
 
-        self.program.equilibrilize_all(
+        self.program.equilibrilize_domain_tick(
             self.queue, self.geometry.size(), self.layout, self.memory.cl_pop).wait()
 
         self.tick_tasks = []
@@ -82,24 +79,9 @@ class Lattice:
     def get_moments(self):
         moments = numpy.ndarray(shape=(self.memory.volume*(self.descriptor.d+1),1), dtype=self.float_type[0])
 
-        self.program.collect_moments_all(
+        self.program.collect_moments_domain_tock(
             self.queue, self.geometry.inner_size(), self.layout, self.memory.cl_pop, self.memory.cl_moments)
 
         cl.enqueue_copy(self.queue, moments, self.memory.cl_moments).wait();
 
         return moments
-
-HelperTemplate = """
-__kernel void equilibrilize_all(__global ${float_type}* f_next)
-{
-    const unsigned int gid = ${index.gid('get_global_id(0)', 'get_global_id(1)')};
-    equilibrilize_tick(f_next, gid);
-}
-
-__kernel void collect_moments_all(__global ${float_type}* f,
-                                  __global ${float_type}* moments)
-{
-    const unsigned int gid = ${index.gid('get_global_id(0)+1', 'get_global_id(1)+1')};
-    collect_moments_tock(f, gid, moments);
-}
-"""

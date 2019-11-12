@@ -25,7 +25,7 @@ class Memory:
         return z * (self.size_x*self.size_y) + y * self.size_x + x;
 
 class Lattice:
-    def __init__(self, geometry, kernel_src, descriptor, platform = 0, precision = 'single'):
+    def __init__(self, geometry, kernel_src, descriptor, context, queue, precision = 'single'):
         self.geometry = geometry
         self.descriptor = descriptor
 
@@ -34,13 +34,10 @@ class Lattice:
             'double': (numpy.float64, 'double'),
         }.get(precision, None)
 
-        self.platform = cl.get_platforms()[platform]
         self.layout = None
 
-        self.context = cl.Context(
-            properties=[(cl.context_properties.PLATFORM, self.platform)])
-
-        self.queue = cl.CommandQueue(self.context)
+        self.context = context
+        self.queue   = queue
 
         self.memory = Memory(descriptor, self.geometry, self.context, self.float_type[0])
         self.tick = False
@@ -52,8 +49,10 @@ class Lattice:
 
         self.build_kernel(kernel_src)
 
-        self.program.equilibrilize_all(
+        self.program.equilibrilize_domain(
             self.queue, self.geometry.size(), self.layout, self.memory.cl_pop_a, self.memory.cl_pop_b).wait()
+        self.program.equilibrilize_domain(
+            self.queue, self.geometry.size(), self.layout, self.memory.cl_pop_b, self.memory.cl_pop_a).wait()
 
         self.tasks = []
 
@@ -80,29 +79,12 @@ class Lattice:
         moments = numpy.ndarray(shape=(self.memory.volume*(self.descriptor.d+1),1), dtype=self.float_type[0])
 
         if self.tick:
-            self.program.collect_moments_all(
+            self.program.collect_moments_domain(
                 self.queue, self.geometry.size(), self.layout, self.memory.cl_pop_b, self.memory.cl_moments)
         else:
-            self.program.collect_moments_all(
+            self.program.collect_moments_domain(
                 self.queue, self.geometry.size(), self.layout, self.memory.cl_pop_a, self.memory.cl_moments)
 
         cl.enqueue_copy(self.queue, moments, self.memory.cl_moments).wait();
 
         return moments
-
-HelperTemplate = """
-__kernel void equilibrilize_all(__global ${float_type}* f_next,
-                                __global ${float_type}* f_prev)
-{
-    const unsigned int gid = ${index.gid('get_global_id(0)', 'get_global_id(1)')};
-    equilibrilize(f_next, f_prev, gid);
-    equilibrilize(f_prev, f_next, gid);
-}
-
-__kernel void collect_moments_all(__global ${float_type}* f,
-                                  __global ${float_type}* moments)
-{
-    const unsigned int gid = ${index.gid('get_global_id(0)', 'get_global_id(1)')};
-    collect_moments(f, gid, moments);
-}
-"""

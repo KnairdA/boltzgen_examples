@@ -2,6 +2,9 @@ import numpy
 import time
 from string import Template
 
+import pyopencl as cl
+from pyopencl.tools import get_gl_sharing_context_properties
+
 from boltzgen import Generator, Geometry
 from boltzgen.lbm.lattice import D2Q9
 from boltzgen.lbm.model   import BGK
@@ -40,7 +43,6 @@ def glut_window(fullscreen = False):
 window = glut_window(fullscreen = False)
 
 Lattice = eval('%s.Lattice' % streaming)
-HelperTemplate = eval('%s.HelperTemplate' % streaming)
 MomentsTexture = eval('%s.MomentsTexture' % streaming)
 
 generator = Generator(
@@ -51,10 +53,13 @@ generator = Generator(
     index     = 'ZYX',
     layout    = 'SOA')
 
-kernel_src  = generator.kernel(geometry, functions, extras)
-kernel_src += generator.custom(geometry, HelperTemplate)
+kernel_src = generator.kernel(geometry, functions, extras)
 
-lattice = Lattice(geometry, kernel_src, D2Q9, precision = precision)
+cl_platform = cl.get_platforms()[0]
+cl_context  = cl.Context(properties=[(cl.context_properties.PLATFORM, cl_platform)] + get_gl_sharing_context_properties())
+cl_queue    = cl.CommandQueue(cl_context)
+
+lattice = Lattice(geometry, kernel_src, D2Q9, cl_context, cl_queue, precision = precision)
 moments = MomentsTexture(lattice)
 
 gid = lattice.memory.gid
@@ -69,19 +74,19 @@ lid_cells = CellList(lattice.context, lattice.queue, lattice.float_type,
     [ gid(x,y) for x, y in geometry.inner_cells() if y == geometry.size_y-2 ])
 
 if streaming == 'AB':
-    lattice.schedule('collide_and_stream_cells', bulk_cells)
-    lattice.schedule('velocity_momenta_boundary_cells', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
-    lattice.schedule('velocity_momenta_boundary_cells', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
+    lattice.schedule('collide_and_stream', bulk_cells)
+    lattice.schedule('velocity_momenta_boundary', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
+    lattice.schedule('velocity_momenta_boundary', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
 
 elif streaming == 'AA':
-    lattice.schedule_tick('collide_and_stream_cells_tick', bulk_cells)
-    lattice.schedule_tick('velocity_momenta_boundary_cells_tick', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
-    lattice.schedule_tick('velocity_momenta_boundary_cells_tick', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
+    lattice.schedule_tick('collide_and_stream_tick', bulk_cells)
+    lattice.schedule_tick('velocity_momenta_boundary_tick', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
+    lattice.schedule_tick('velocity_momenta_boundary_tick', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
 
-    lattice.schedule_tock('equilibrilize_cells_tick', ghost_cells)
-    lattice.schedule_tock('collide_and_stream_cells_tock', bulk_cells)
-    lattice.schedule_tock('velocity_momenta_boundary_cells_tock', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
-    lattice.schedule_tock('velocity_momenta_boundary_cells_tock', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
+    lattice.schedule_tock('equilibrilize_tick', ghost_cells)
+    lattice.schedule_tock('collide_and_stream_tock', bulk_cells)
+    lattice.schedule_tock('velocity_momenta_boundary_tock', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
+    lattice.schedule_tock('velocity_momenta_boundary_tock', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
 
 
 def get_projection(width, height):
