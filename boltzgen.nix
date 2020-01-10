@@ -7,7 +7,7 @@ let in {
 
     src = builtins.fetchGit {
       url = "https://code.kummerlaender.eu/boltzgen/";
-      rev = "aa509dd4ebbb9d1d8ad6ebfe05111228fd9ae7c0";
+      rev = "b5a24f31871d900342a3c47398cc75e22bad0b6f";
     };
 
     propagatedBuildInputs = with pkgs.python37Packages; [

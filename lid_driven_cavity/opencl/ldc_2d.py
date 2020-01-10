@@ -20,10 +20,14 @@ functions = ['collide_and_stream', 'equilibrilize', 'collect_moments', 'momenta_
 extras    = ['cell_list_dispatch']
 
 precision = 'single'
-streaming = 'AA'
+streaming = 'SSS'
 
-import AA
+if streaming == 'SSS':
+    functions = functions + ['update_sss_control_structure']
+
 import AB
+import AA
+import SSS
 
 Lattice = eval('%s.Lattice' % streaming)
 
@@ -60,7 +64,10 @@ wall_cells = CellList(lattice.context, lattice.queue, lattice.float_type,
 lid_cells = CellList(lattice.context, lattice.queue, lattice.float_type,
     [ gid(x,y) for x, y in geometry.inner_cells() if y == geometry.size_y-2 ])
 
-if streaming == 'AB':
+if streaming == 'SSS':
+    lattice.schedule('equilibrilize', ghost_cells)
+
+if streaming in ['AB', 'SSS']:
     lattice.schedule('collide_and_stream', bulk_cells)
     lattice.schedule('velocity_momenta_boundary', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
     lattice.schedule('velocity_momenta_boundary', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
