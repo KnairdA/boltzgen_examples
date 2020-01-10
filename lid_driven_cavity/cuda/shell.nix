@@ -14,6 +14,7 @@ pkgs.stdenvNoCC.mkDerivation rec {
   in with pkgs; [
     local-python
     cmake
+    gcc
     cudatoolkit
     linuxPackages.nvidia_x11 
   ];
