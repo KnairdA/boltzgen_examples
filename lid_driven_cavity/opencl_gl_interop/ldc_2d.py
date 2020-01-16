@@ -18,14 +18,18 @@ from pyrr import matrix44
 
 geometry = Geometry(512, 512)
 
-functions = ['collide_and_stream', 'equilibrilize', 'collect_moments', 'momenta_boundary']
-extras    = ['cell_list_dispatch', 'opencl_gl_interop']
-
 precision = 'single'
 streaming = 'AA'
 
+functions = ['collide_and_stream', 'equilibrilize', 'collect_moments', 'momenta_boundary']
+extras    = ['cell_list_dispatch', 'opencl_gl_interop']
+
+if streaming == 'SSS':
+    functions = functions + ['update_sss_control_structure']
+
 import AA
 import AB
+import SSS
 
 def glut_window(fullscreen = False):
     glutInit(sys.argv)
@@ -73,7 +77,10 @@ wall_cells = CellList(lattice.context, lattice.queue, lattice.float_type,
 lid_cells = CellList(lattice.context, lattice.queue, lattice.float_type,
     [ gid(x,y) for x, y in geometry.inner_cells() if y == geometry.size_y-2 ])
 
-if streaming == 'AB':
+if streaming == 'SSS':
+    lattice.schedule('equilibrilize', ghost_cells)
+
+if streaming in ['AB', 'SSS']:
     lattice.schedule('collide_and_stream', bulk_cells)
     lattice.schedule('velocity_momenta_boundary', wall_cells, numpy.array([0.0, 0.0], dtype=lattice.float_type[0]))
     lattice.schedule('velocity_momenta_boundary', lid_cells,  numpy.array([0.1, 0.0], dtype=lattice.float_type[0]))
