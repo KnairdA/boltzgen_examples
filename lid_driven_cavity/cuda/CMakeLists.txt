@@ -17,6 +17,7 @@ add_custom_command(
 	DEPENDS
 		generate.py
 		config.py
+		ldc.cuda.AA.mako
 		ldc.cuda.SSS.mako
 )
 
